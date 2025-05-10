@@ -39,6 +39,11 @@
       }
     }
 
+    // モバイルデバイスの判定
+    function isMobileDevice() {
+      return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
+
     // BabyronJS 初期化
     function initBabylon() {
       const canvas = document.getElementById('renderCanvas');
@@ -56,6 +61,11 @@
       const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
       sphere.position.z = 2;
 
+      // ドラッグ操作を有効化
+      const dragBehavior = new BABYLON.PointerDragBehavior();
+      dragBehavior.useObjectOrientationForDragging = false; // ローカル座標ではなくワールド座標で動かす
+      sphere.addBehavior(dragBehavior);
+
       // レンダリングループ
       engine.runRenderLoop(() => {
         scene.render();
@@ -67,8 +77,11 @@
     }
 
     // カメラと3Dシーンの初期化
-    startCamera();
+    if (isMobileDevice()) {
+      startCamera();
+    }
     initBabylon();
+    
   </script>
 </body>
 </html>
