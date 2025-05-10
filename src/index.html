@@ -2,9 +2,10 @@
 <html>
 
 <head>
-    <title>BabylonJS AR Demo</title>
+    <title>BabylonJS WebXR AR Demo</title>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
     <style>
         html,
         body {
@@ -15,155 +16,50 @@
             background: black;
         }
 
-        video {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            object-fit: cover;
-            transform: scaleX(-1); /* 鏡像反転 */
-        }
-
         canvas {
             position: absolute;
             width: 100%;
             height: 100%;
-            z-index: 2;
-            pointer-events: auto;
-            /*opacity: 0.5; 半透明に設定 */
-        }
-
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-            z-index: 3;
-        }
-
-        #controls button {
-            width: 50px;
-            height: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            cursor: pointer;
+            z-index: 1;
         }
     </style>
 </head>
 
 <body>
-    <video id="video" autoplay muted playsinline></video>
     <canvas id="renderCanvas"></canvas>
 
-    <!-- コントロール用のボタン -->
-    <div id="controls">
-        <button id="upButton">↑</button>
-        <button id="leftButton">←</button>
-        <button id="rightButton">→</button>
-        <button id="downButton">↓</button>
-    </div>
-
     <script>
-        async function startCamera() {
-            try {
-                const video = document.getElementById("video");
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }
-                });
-                video.srcObject = stream;
-            } catch (error) {
-                alert("カメラのアクセスに失敗しました: " + error.message);
-            }
-        }
-
-        function isMobileDevice() {
-            return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        }
-
-        function initBabylon() {
+        async function initBabylon() {
             const canvas = document.getElementById('renderCanvas');
             const engine = new BABYLON.Engine(canvas, true);
             const scene = new BABYLON.Scene(engine);
-            scene.clearColor = new BABYLON.Color4(0, 0, 0, 0); // 背景を透明に設定
 
-            // カメラ設定
-            const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0), scene);
-            camera.attachControl(canvas, true);
-
-            // ライト設定
-            const directionalLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -2, -1), scene);
-            directionalLight.position = new BABYLON.Vector3(5, 10, 5);
-
-            // シャドウジェネレーターを作成
-            const shadowGenerator = new BABYLON.ShadowGenerator(1024, directionalLight);
+            // 環境光
+            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
             // テスト用のボックス
-            const box = BABYLON.MeshBuilder.CreateBox("box", {}, scene);
-            box.position = new BABYLON.Vector3(0, 0, 0);
+            const box = BABYLON.MeshBuilder.CreateBox("box", { size: 0.2 }, scene);
+            box.position = new BABYLON.Vector3(0, 0, -1); // カメラの前に配置
 
-            // ボックスを影のキャスターとして登録
-            shadowGenerator.addShadowCaster(box);
-
-            // ボックスに影を受け取る設定を有効化
-            box.receiveShadows = true;
-
-            // 回転速度を管理する変数
-            let rotationX = 0; // X軸の回転速度
-            let rotationY = 0; // Y軸の回転速度
-
-            // 長押し対応のヘルパー関数
-            function handleSmoothPress(buttonId, setRotation) {
-                const button = document.getElementById(buttonId);
-
-                button.addEventListener("mousedown", () => {
-                    setRotation(true); // 回転を開始
-                });
-
-                button.addEventListener("mouseup", () => {
-                    setRotation(false); // 回転を停止
-                });
-
-                button.addEventListener("mouseleave", () => {
-                    setRotation(false); // ボタン外にカーソルが移動した場合も停止
-                });
-            }
-
-            // 長押し対応のイベントリスナーを追加
-            handleSmoothPress("upButton", (isPressed) => {
-                rotationX = isPressed ? -0.03 : 0;
-            });
-
-            handleSmoothPress("downButton", (isPressed) => {
-                rotationX = isPressed ? 0.03 : 0;
-            });
-
-            handleSmoothPress("leftButton", (isPressed) => {
-                rotationY = isPressed ? -0.03 : 0;
-            });
-
-            handleSmoothPress("rightButton", (isPressed) => {
-                rotationY = isPressed ? 0.03 : 0;
+            // WebXR のデフォルトエクスペリエンスを有効化
+            const xr = await scene.createDefaultXRExperienceAsync({
+                uiOptions: {
+                    sessionMode: "immersive-ar", // AR モードを有効化
+                },
+                optionalFeatures: true, // 必要に応じてオプション機能を有効化
             });
 
             // レンダリングループ
             engine.runRenderLoop(() => {
-                // 回転を適用
-                box.rotation.x += rotationX;
-                box.rotation.y += rotationY;
-
-                // シーンをレンダリング
                 scene.render();
             });
 
+            // ウィンドウサイズ変更時にエンジンをリサイズ
             window.addEventListener('resize', () => {
                 engine.resize();
             });
         }
 
-        startCamera();
         initBabylon();
     </script>
 </body>
