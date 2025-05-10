@@ -21,6 +21,7 @@
             height: 100%;
             z-index: 1;
             object-fit: cover;
+            transform: scaleX(-1); /* 鏡像反転 */
         }
 
         canvas {
@@ -29,6 +30,7 @@
             height: 100%;
             z-index: 2;
             pointer-events: auto;
+            /*opacity: 0.5; 半透明に設定 */
         }
 
         #controls {
@@ -161,9 +163,7 @@
             });
         }
 
-        if (isMobileDevice()) {
-            startCamera();
-        }
+        startCamera();
         initBabylon();
     </script>
 </body>
