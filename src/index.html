@@ -1,67 +1,74 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>BabylonJS WebXR AR Demo</title>
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
-    <style>
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-            background: black;
-        }
-
-        canvas {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-    </style>
+  <title>BabyronJS WebXR AR Demo</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
 </head>
-
 <body>
-    <canvas id="renderCanvas"></canvas>
+  <canvas id="renderCanvas"></canvas>
+  <script>
+    window.addEventListener('DOMContentLoaded', async function() {
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+      const scene = new BABYLON.Scene(engine);
 
-    <script>
-        async function initBabylon() {
-            const canvas = document.getElementById('renderCanvas');
-            const engine = new BABYLON.Engine(canvas, true);
-            const scene = new BABYLON.Scene(engine);
+      // カメラ（AR用）
+      const camera = new BABYLON.WebXRCamera("camera", scene);
 
-            // 環境光
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+      // 環境光
+      const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
-            // テスト用のボックス
-            const box = BABYLON.MeshBuilder.CreateBox("box", { size: 0.2 }, scene);
-            box.position = new BABYLON.Vector3(0, 0, -1); // カメラの前に配置
+      // ARのセットアップ
+      const xrHelper = await scene.createDefaultXRExperienceAsync({
+        uiOptions: {
+          sessionMode: "immersive-ar",
+          referenceSpaceType: "local-floor"
+        },
+        optionalFeatures: true
+      });
 
-            // WebXR のデフォルトエクスペリエンスを有効化
-            const xr = await scene.createDefaultXRExperienceAsync({
-                uiOptions: {
-                    sessionMode: "immersive-ar", // AR モードを有効化
-                },
-                optionalFeatures: true, // 必要に応じてオプション機能を有効化
-            });
+      // ヒットテスト（平面検出）
+      const hitTest = xrHelper.baseExperience.featuresManager.enableFeature(
+        BABYLON.WebXRFeatureName.HIT_TEST,
+        "latest"
+      );
 
-            // レンダリングループ
-            engine.runRenderLoop(() => {
-                scene.render();
-            });
+      // 3Dオブジェクト（球）を作成
+      const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 0.1 }, scene);
+      sphere.isVisible = false;
 
-            // ウィンドウサイズ変更時にエンジンをリサイズ
-            window.addEventListener('resize', () => {
-                engine.resize();
-            });
+      // 平面にヒットした場所に球を表示
+      hitTest.onHitTestResultObservable.add((results) => {
+        if (results.length > 0) {
+          const position = results[0].transformationMatrix.getTranslation();
+          sphere.position.copyFrom(position);
+          sphere.isVisible = true;
         }
+      });
 
-        initBabylon();
-    </script>
+      // レンダリングループ
+      engine.runRenderLoop(() => {
+        scene.render();
+      });
+
+      window.addEventListener("resize", function() {
+        engine.resize();
+      });
+    });
+  </script>
 </body>
-
 </html>
