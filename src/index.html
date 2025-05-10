@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BabyronJS AR Demo</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+    video, canvas {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="renderCanvas"></canvas>
+  <script>
+    // カメラ映像の取得
+    async function startCamera() {
+      try {
+        const video = document.getElementById("video");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+        video.srcObject = stream;
+      } catch (error) {
+        alert("カメラのアクセスに失敗しました: " + error.message);
+      }
+    }
+
+    // BabyronJS 初期化
+    function initBabylon() {
+      const canvas = document.getElementById('renderCanvas');
+      const engine = new BABYLON.Engine(canvas, true);
+      const scene = new BABYLON.Scene(engine);
+
+      // カメラ設定
+      const camera = new BABYLON.ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2, 5, BABYLON.Vector3.Zero(), scene);
+      camera.attachControl(canvas, true);
+
+      // 環境光
+      const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+
+      // テスト用の3Dオブジェクト（ARのように表示）
+      const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 1 }, scene);
+      sphere.position.z = 2;
+
+      // レンダリングループ
+      engine.runRenderLoop(() => {
+        scene.render();
+      });
+
+      window.addEventListener('resize', () => {
+        engine.resize();
+      });
+    }
+
+    // カメラと3Dシーンの初期化
+    startCamera();
+    initBabylon();
+  </script>
+</body>
+</html>
