@@ -85,6 +85,7 @@
             const canvas = document.getElementById('renderCanvas');
             const engine = new BABYLON.Engine(canvas, true);
             const scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0, 0, 0, 0); // 背景を透明に設定
 
             // カメラ設定
             const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 3, new BABYLON.Vector3(0, 0, 0), scene);
