@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>BabyronJS WebXR AR Demo</title>
+  <title>BabyronJS WebXR AR Demo - No Hit Test</title>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
   <style>
@@ -41,23 +41,23 @@
         optionalFeatures: true
       });
 
-      // ヒットテスト（平面検出）
-      const hitTest = xrHelper.baseExperience.featuresManager.enableFeature(
-        BABYLON.WebXRFeatureName.HIT_TEST,
-        "latest"
-      );
+      // 3Dオブジェクト（球）を作成し、カメラ前に配置
+      const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 0.2 }, scene);
+      sphere.position.set(0, 0, -1); // カメラの正面 1m
 
-      // 3Dオブジェクト（球）を作成
-      const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 0.1 }, scene);
-      sphere.isVisible = false;
-
-      // 平面にヒットした場所に球を表示
-      hitTest.onHitTestResultObservable.add((results) => {
-        if (results.length > 0) {
-          const position = results[0].transformationMatrix.getTranslation();
-          sphere.position.copyFrom(position);
-          sphere.isVisible = true;
-        }
+      // オブジェクトをタップで移動
+      const xrInput = xrHelper.input;
+      xrInput.onControllerAddedObservable.add(controller => {
+        controller.onMotionControllerInitObservable.add(() => {
+          controller.onTriggerStateChangedObservable.add(event => {
+            if (event.pressed) {
+              // カメラ位置を基準に球を移動
+              const camPos = camera.position;
+              const forward = camera.getDirection(BABYLON.Vector3.Forward());
+              sphere.position.copyFrom(camPos.add(forward.scale(1.5)));
+            }
+          });
+        });
       });
 
       // レンダリングループ
